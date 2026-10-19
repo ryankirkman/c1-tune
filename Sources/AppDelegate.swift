@@ -119,7 +119,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         case .ready: statusItem.button?.toolTip = "Opal C1 ready"
         case .starting(let message): statusItem.button?.toolTip = message
         case .notConnected: statusItem.button?.toolTip = "Opal C1 not connected"
-        case .busy: statusItem.button?.toolTip = "Opal C1 is in use by another app"
+        case .busy: statusItem.button?.toolTip = OpalSession.Status.busyMessage
         case .failed(let message): statusItem.button?.toolTip = message
         }
     }

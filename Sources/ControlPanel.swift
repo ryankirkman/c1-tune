@@ -175,7 +175,7 @@ final class ControlPanel: NSViewController {
         case .notConnected: status.stringValue = "Not connected"
         case .starting(let message): status.stringValue = message
         case .ready: status.stringValue = "Ready"
-        case .busy: status.stringValue = "In use by another app"
+        case .busy: status.stringValue = OpalSession.Status.busyMessage
         case .failed(let message): status.stringValue = message
         }
         status.toolTip = status.stringValue
@@ -406,5 +406,13 @@ final class SliderRow: NSStackView {
         guard !(applyOnRelease && dragging), v != committed else { return }
         committed = v
         onChange?(v)
+    }
+}
+
+extension OpalSession.Status {
+    /// Who has the camera, naming Opal Composer when it's the culprit.
+    @MainActor static var busyMessage: String {
+        NSRunningApplication.runningApplications(withBundleIdentifier: "com.opalcamera.Opal.v2").isEmpty
+            ? "In use by another app" : "Opal Composer is using the camera. Quit it to use C1 Tune."
     }
 }
