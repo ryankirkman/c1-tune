@@ -2,18 +2,19 @@
 # Switch off Opal Composer's background services so nothing grabs the camera from C1 Tune:
 #   ./scripts/disable-opal.sh          quit Opal and disable its login items, agents and helpers
 #   ./scripts/disable-opal.sh --undo   re-enable them
-#   ./scripts/disable-opal.sh --dry-run  show what it would do
+#   add --dry-run to either to only show what it would do
 # Nothing is deleted, and Opal Composer stays installed (C1 Tune reads its firmware and
 # tuning files). The system-wide helpers need your password; the rest doesn't.
 set -euo pipefail
 
 undo=false dry=false
-case "${1:-}" in
-  --undo) undo=true ;;
-  --dry-run) dry=true ;;
-  "") ;;
-  *) echo "usage: $0 [--undo|--dry-run]" >&2; exit 2 ;;
-esac
+for arg in "$@"; do
+  case "$arg" in
+    --undo) undo=true ;;
+    --dry-run) dry=true ;;
+    *) echo "usage: $0 [--undo] [--dry-run]" >&2; exit 2 ;;
+  esac
+done
 
 # run <command…>: run it, or just print it with --dry-run.
 run() { if $dry; then echo "  would run: $*"; else "$@"; fi; }
