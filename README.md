@@ -116,7 +116,20 @@ so it's a few dB hotter than out of the box. Peaks reached about −1.5 dBFS in 
 the camera's DepthAI firmware and Opal's two tuning files. Nothing from Opal is
 redistributed here. `mac-setup` installs that version.
 
-Quit Opal Composer before using C1 Tune; only one app can control the camera.
+Only one app can control the camera, so Opal Composer must not be running. If it has ever
+been set up on this Mac, its login item and background helpers can start it again (for
+example when the camera is plugged in). Switch them all off with:
+
+```bash
+make disable-opal    # or scripts/disable-opal.sh; asks for your password for Opal's root helpers
+make enable-opal     # undo
+```
+
+This quits Opal Composer and disables its launchd jobs: the login items, the
+start-on-USB-plug agent, the virtual-camera assistant, and the camera-extension, update
+and uninstall helpers. Nothing is deleted. `scripts/disable-opal.sh --dry-run` shows what
+it would do. Opal's virtual-camera system extension stays installed but idle; only Opal
+Composer can remove it. If C1 Tune finds Opal Composer holding the camera, its panel says so.
 
 ## Not yet supported
 
@@ -134,6 +147,7 @@ Quit Opal Composer before using C1 Tune; only one app can control the camera.
 make install    # builds and copies to /Applications
 make test       # offline protocol tests (no camera needed)
 make uninstall  # removes the app, its login item and its settings
+make disable-opal  # switches off Opal Composer's background services (see Requirements)
 ```
 
 Turn on **Open at login** in the panel, or from a script:

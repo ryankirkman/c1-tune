@@ -49,7 +49,14 @@ test:
 	swiftc -swift-version 6 Sources/DepthAI.swift Tests/main.swift -o build/tests
 	build/tests Tests/fixtures
 
+# Switch Opal Composer's login items, agents and helpers off (or back on). Opal stays installed.
+disable-opal:
+	scripts/disable-opal.sh
+
+enable-opal:
+	scripts/disable-opal.sh --undo
+
 clean:
 	rm -rf build
 
-.PHONY: all run install reinstall uninstall test clean
+.PHONY: all run install reinstall uninstall test disable-opal enable-opal clean
