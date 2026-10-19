@@ -45,6 +45,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
         DistributedNotificationCenter.default().addObserver(
             self, selector: #selector(setFromCommandLine(_:)), name: .init("com.ryankirkman.c1tune.set"), object: nil)
         updateIcon()
+
+        if DemoMode.previewImage != nil {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { [weak self] in
+                self?.togglePanel()
+                self?.popover.contentViewController?.view.window?.makeFirstResponder(nil)   // no focus ring
+            }
+        }
     }
 
     /// Settings sent by `C1Tune --set key=value ...`.

@@ -35,6 +35,11 @@ final class PreviewView: NSView {
     }
 
     func start() {
+        if let image = DemoMode.previewImage {
+            layer?.contents = image
+            layer?.contentsGravity = .resizeAspectFill
+            return
+        }
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             message.stringValue = ""
@@ -74,6 +79,13 @@ final class PreviewView: NSView {
     private func showDenied() {
         message.stringValue = "Allow camera access for C1 Tune in\nSystem Settings → Privacy & Security."
     }
+}
+
+/// For README screenshots: `C1TUNE_DEMO_IMAGE=<photo> C1Tune` opens the panel on launch and
+/// shows that photo in the preview instead of the camera.
+enum DemoMode {
+    static let previewImage: NSImage? = ProcessInfo.processInfo.environment["C1TUNE_DEMO_IMAGE"]
+        .flatMap { NSImage(contentsOfFile: $0) }
 }
 
 /// Owns the capture session; all session work happens on its own queue.
