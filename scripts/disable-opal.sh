@@ -29,7 +29,9 @@ labels() {
   {
     launchctl print "$domain" 2>/dev/null | grep -o 'com\.opalcamera[A-Za-z0-9._-]*'
     for plist in "$dir"/com.opalcamera.*.plist; do
-      [ -e "$plist" ] && /usr/libexec/PlistBuddy -c 'Print :Label' "$plist"
+      # `if`, not `&&`: a glob with no match must not become the function's failing exit
+      # status, which `set -e` would turn into a silent exit at the caller's assignment.
+      if [ -e "$plist" ]; then /usr/libexec/PlistBuddy -c 'Print :Label' "$plist"; fi
     done
   } | sort -u
 }
