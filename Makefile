@@ -8,9 +8,11 @@ GENERATED := build/Version.swift
 
 all: $(BINARY)
 
+# Rewritten only when the version or commit changes, so an unchanged tree doesn't recompile.
 $(GENERATED): FORCE
 	@mkdir -p build
-	@printf 'let appVersion = "%s"\nlet appCommit = "%s"\n' "$(VERSION)" "$(COMMIT)" > $(GENERATED)
+	@printf 'let appVersion = "%s"\nlet appCommit = "%s"\n' "$(VERSION)" "$(COMMIT)" > $@.tmp
+	@if cmp -s $@.tmp $@; then rm $@.tmp; else mv $@.tmp $@; fi
 
 FORCE:
 
@@ -41,7 +43,8 @@ uninstall:
 	-pkill -x $(APP)
 	rm -rf /Applications/$(APP).app
 	-defaults delete com.ryankirkman.c1tune
-	@echo "Uninstalled $(APP) (app, login item, and preferences removed)."
+	rm -rf "$(HOME)/Library/Application Support/C1Tune"
+	@echo "Uninstalled $(APP) (app, login item, preferences and firmware cache removed)."
 
 # Offline protocol tests: encoders vs reference bytes, and firmware extraction from Opal.
 test:
