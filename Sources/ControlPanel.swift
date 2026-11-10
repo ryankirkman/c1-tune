@@ -7,7 +7,7 @@ final class ControlPanel: NSViewController {
     /// Called with the new settings and which group of camera commands to send.
     var onChange: ((CameraSettings, CameraSettings.Group) -> Void)?
     var onReset: (() -> Void)?
-    /// Settings that only take effect when the camera's pipeline restarts (orientation).
+    /// Settings that only take effect when the camera's pipeline restarts (zoom, framing, flip, microphone).
     var onRestartNeeded: ((CameraSettings) -> Void)?
     var onRetry: (() -> Void)?
 

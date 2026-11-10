@@ -14,7 +14,8 @@ image tuning, and nothing else.
 - **Lightweight.** One ~570 KB binary built with just the Xcode command line tools. No
   virtual camera, no AI features, no background services.
 - **Safe.** Nothing is ever written to the camera's flash; unplugging it restores factory
-  behaviour. If the app quits, the camera keeps working with your last settings.
+  behaviour. If the app quits, the camera drops back to its factory webcam mode within a
+  couple of seconds, so it keeps working (without your settings until C1 Tune runs again).
 
 Not affiliated with or endorsed by Opal Camera.
 
@@ -235,7 +236,7 @@ them byte for byte. Nothing from Opal is redistributed here.
 | `make reinstall` | Rebuild, swap the installed app and relaunch it |
 | `make test` | Offline protocol tests (no camera needed) |
 | `make disable-opal` / `make enable-opal` | Switch Opal Composer's background services off / on |
-| `make uninstall` | Remove the app, its login item and its settings |
+| `make uninstall` | Remove the app, its login item, its settings and its cached firmware |
 
 The screenshot above is the real panel, launched with `C1TUNE_DEMO_IMAGE=<picture>` so the
 preview shows an illustration instead of the camera.

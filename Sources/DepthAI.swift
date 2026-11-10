@@ -201,8 +201,9 @@ struct CameraControl: Sendable, Equatable {
 // MARK: - Boot image
 
 enum BootImage {
-    /// libnop BoardConfig: default USB ids, UVC on, and optionally the watchdog off so the
-    /// camera keeps running if this app quits.
+    /// libnop BoardConfig: default USB ids, UVC on, and the watchdog timeout (nil keeps the
+    /// firmware's default, which is what the app boots with; 0 turns it off, but then the
+    /// firmware resets as soon as video starts).
     static func boardConfig(watchdogMs: UInt32?, uvc: Bool) -> [UInt8] {
         var n = Nop()
         n.structure(8)
@@ -272,8 +273,10 @@ enum BootImage {
 enum Pipeline {
     /// ColorCamera and node settings. Defaults mirror what Opal Composer sets (read from its
     /// binary): RGB socket, planar output, normal orientation, and UVC GPIOs 58/37/34 (the
-    /// status light's blue, green and red) driven high while streaming. The sensor runs in
-    /// its native 1080p30 mode, matching the 1080p-only webcam format (see patchFrameSizes).
+    /// status light's blue, green and red) driven high while streaming. The app overrides
+    /// `resolution` and `ispScale` to run the sensor in 4K and scale it down (see
+    /// CameraSettings.pipelineCamera); the output is always the 1080p the webcam advertises
+    /// (see patchFrameSizes).
     struct Camera {
         var initialControl = CameraControl()
         var resolution: Int32 = 0          // THE_1080_P
