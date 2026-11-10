@@ -52,8 +52,11 @@ same(RPC.request("setAssets", args: [Assets.tuning(size: 195_916)]), fixture("se
 same(RPC.request("memAlloc", args: [.int(195_916)]), fixture("memAlloc_request.bin"), "memAlloc")
 check(RPC.hash("setLogLevel") == 0x8D4F_7389_1DCA_A01D, "RPC name hash")
 
+// Needs Opal Composer on this Mac, so it's skipped where that isn't installed (CI).
 let start = Date()
-if let firmware = try? Firmware.extract(from: URL(fileURLWithPath: Firmware.opalLibrary)) {
+if !FileManager.default.fileExists(atPath: Firmware.opalLibrary) {
+    print("– Firmware extraction skipped (Opal Composer isn't installed)")
+} else if let firmware = try? Firmware.extract(from: URL(fileURLWithPath: Firmware.opalLibrary)) {
     let digest = SHA256.hash(data: firmware).prefix(8).map { String(format: "%02x", $0) }.joined()
     check(firmware.count == 25_205_008 && digest == "a31f3b0f4284ba63",
           String(format: "Firmware extracted from Opal Composer (%.1f s)", Date().timeIntervalSince(start)))
