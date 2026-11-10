@@ -44,6 +44,11 @@ enum USB {
         return device.pointee?.pointee.DeviceRequest(device, &req) ?? kIOReturnError
     }
 
+    /// Asks the running firmware (Opal's standalone app or ours) to reboot into the bootloader.
+    static func rebootToBootloader() {
+        deviceRequest(.booted, type: 0x00, request: 0xF5, value: 0x0DA1, index: 0)
+    }
+
     fileprivate static func matching(_ cls: String, _ pid: OpalPID, interface: Int? = nil) -> CFMutableDictionary {
         let dict = IOServiceMatching(cls) as NSMutableDictionary
         dict[kUSBVendorID] = vendorID

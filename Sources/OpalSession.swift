@@ -99,7 +99,7 @@ final class OpalSession: @unchecked Sendable {
             controlStream = nil
             // Straight to the bootloader (≈5 s to a fresh pipeline); an XLink reset would wait
             // for the standalone app to boot first (≈14 s).
-            USB.deviceRequest(.booted, type: 0x00, request: 0xF5, value: 0x0DA1, index: 0)
+            USB.rebootToBootloader()
             retryAfter = Date().addingTimeInterval(0.5)
         }
     }
@@ -208,8 +208,7 @@ final class OpalSession: @unchecked Sendable {
         BootImage.patchFrameSizes(&firmware)
 
         if USB.isPresent(.booted) {
-            // Ask whatever firmware is running to reboot into the bootloader.
-            USB.deviceRequest(.booted, type: 0x00, request: 0xF5, value: 0x0DA1, index: 0)
+            USB.rebootToBootloader()
             guard USB.wait(for: .bootloader, timeout: 6) else { throw StartError("The camera didn't restart into its bootloader.") }
         }
         if USB.isPresent(.bootloader) {
