@@ -46,7 +46,7 @@ uninstall:
 	rm -rf "$(HOME)/Library/Application Support/C1Tune"
 	@echo "Uninstalled $(APP) (app, login item, preferences and firmware cache removed)."
 
-# Offline protocol tests: encoders vs reference bytes, and firmware extraction from Opal.
+# Protocol tests: encoders vs reference bytes, and the firmware (from Opal, or downloaded where Opal isn't installed).
 test:
 	@mkdir -p build
 	swiftc -swift-version 6 Sources/DepthAI.swift Tests/main.swift -o build/tests

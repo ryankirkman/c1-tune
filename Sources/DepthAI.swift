@@ -1,4 +1,5 @@
 import Compression
+import CryptoKit
 import Foundation
 
 // Wire formats for the DepthAI firmware Opal ships (device side 26f3d765, depthai-shared
@@ -494,15 +495,34 @@ enum Firmware {
         let name = sensorReply.range(of: Data("582".utf8)) != nil ? "Opal582_v2.bin" : "Opal_v0.12.bin"
         return try? Data(contentsOf: URL(fileURLWithPath: opalResources).appendingPathComponent(name))
     }
-    static let firmwareName = "depthai-device-openvino-2021.4-26f3d76548489ac14bc1c8ea9ef5ffc842e8adf7.cmd"
+    static let firmwareCommit = "26f3d76548489ac14bc1c8ea9ef5ffc842e8adf7"
+    static let firmwareName = "depthai-device-openvino-2021.4-\(firmwareCommit).cmd"
 
-    /// The device firmware, cached after the first extraction from Opal's library.
+    /// Opal ships Luxonis's stock build of this commit: the copy inside Opal Composer is
+    /// byte-identical to the one in Luxonis's public archive, so either source will do.
+    static let firmwareSHA256 = "a31f3b0f4284ba6352e83f6abae26539098553db5cab9a62294fa37935281f7c"
+    static let luxonisArchive = URL(string: "https://artifacts.luxonis.com/artifactory/luxonis-myriad-snapshot-local/"
+        + "depthai-device-side/\(firmwareCommit)/depthai-device-fwp-\(firmwareCommit).tar.xz")!
+
+    /// The device firmware: from the cache, else extracted from Opal's library, else (Opal
+    /// Composer not installed) downloaded from Luxonis. Cached after the first time.
     static func load() throws -> Data {
         let cache = cacheDirectory().appendingPathComponent(firmwareName)
         if let data = try? Data(contentsOf: cache), data.count > 1_000_000 { return data }
-        let firmware = try extract(from: URL(fileURLWithPath: opalLibrary))
+        let firmware = try (try? extract(from: URL(fileURLWithPath: opalLibrary))) ?? download()
         try? FileManager.default.createDirectory(at: cacheDirectory(), withIntermediateDirectories: true)
         try? firmware.write(to: cache)
+        return firmware
+    }
+
+    /// Fetches Luxonis's archive (8 MB) and returns the device .cmd from it, but only if it
+    /// is exactly the firmware this app was written against. Blocks; call off the main thread.
+    static func download() throws -> Data {
+        guard let archive = try? Data(contentsOf: luxonisArchive),
+              let tar = xzDecompress(archive),
+              let firmware = tarFile(tar, named: firmwareName),
+              SHA256.hash(data: firmware).map({ String(format: "%02x", $0) }).joined() == firmwareSHA256
+        else { throw Missing() }
         return firmware
     }
 
@@ -513,7 +533,7 @@ enum Firmware {
 
     struct Missing: LocalizedError {
         var errorDescription: String? {
-            "Couldn't find the Opal C1 firmware. Install Opal Composer 1.0.1 (C1 Tune reads the firmware from it)."
+            "Couldn't get the Opal C1 firmware. Install Opal Composer 1.0.1, or connect to the internet so C1 Tune can download it."
         }
     }
 

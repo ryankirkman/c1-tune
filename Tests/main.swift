@@ -1,8 +1,8 @@
 import CryptoKit
 import Foundation
 
-// Offline protocol tests: `make test`. Compares encoders with reference bytes produced by
-// compiling DepthAI's own headers (Tests/fixtures), and checks firmware extraction.
+// Protocol tests: `make test`. Compares encoders with reference bytes produced by compiling
+// DepthAI's own headers (Tests/fixtures), and checks the firmware can be obtained.
 
 var failures = 0
 @MainActor func check(_ ok: Bool, _ what: String) {
@@ -52,16 +52,21 @@ same(RPC.request("setAssets", args: [Assets.tuning(size: 195_916)]), fixture("se
 same(RPC.request("memAlloc", args: [.int(195_916)]), fixture("memAlloc_request.bin"), "memAlloc")
 check(RPC.hash("setLogLevel") == 0x8D4F_7389_1DCA_A01D, "RPC name hash")
 
-// Needs Opal Composer on this Mac, so it's skipped where that isn't installed (CI).
-let start = Date()
-if !FileManager.default.fileExists(atPath: Firmware.opalLibrary) {
-    print("– Firmware extraction skipped (Opal Composer isn't installed)")
-} else if let firmware = try? Firmware.extract(from: URL(fileURLWithPath: Firmware.opalLibrary)) {
-    let digest = SHA256.hash(data: firmware).prefix(8).map { String(format: "%02x", $0) }.joined()
-    check(firmware.count == 25_205_008 && digest == "a31f3b0f4284ba63",
+// The firmware from wherever this Mac can get it: Opal Composer if it's installed (offline),
+// otherwise Luxonis's archive, as the app does. C1TUNE_TEST_DOWNLOAD=1 checks the download too.
+let hasOpal = FileManager.default.fileExists(atPath: Firmware.opalLibrary)
+if hasOpal {
+    let start = Date()
+    let firmware = try? Firmware.extract(from: URL(fileURLWithPath: Firmware.opalLibrary))
+    let digest = firmware.map { SHA256.hash(data: $0).map { String(format: "%02x", $0) }.joined() }
+    check(digest == Firmware.firmwareSHA256,
           String(format: "Firmware extracted from Opal Composer (%.1f s)", Date().timeIntervalSince(start)))
-} else {
-    check(false, "Firmware extracted from Opal Composer")
+}
+if !hasOpal || ProcessInfo.processInfo.environment["C1TUNE_TEST_DOWNLOAD"] != nil {
+    let start = Date()
+    // download() only returns firmware whose hash matches.
+    check((try? Firmware.download())?.count == 25_205_008,
+          String(format: "Firmware downloaded from Luxonis and verified (%.1f s)", Date().timeIntervalSince(start)))
 }
 
 print(failures == 0 ? "PASS" : "FAIL (\(failures))")
