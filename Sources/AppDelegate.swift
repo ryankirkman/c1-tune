@@ -92,6 +92,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSPopoverDelegate {
     /// Back to defaults. Restarts the camera's pipeline so values without a "default"
     /// command (sharpness, denoise) return to the tuning's own.
     private func reset() {
+        pendingRestart?.cancel()   // the restart below covers it
+        pendingRestart = nil
         settings = CameraSettings()
         settings.save()
         panel.replace(settings)
