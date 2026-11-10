@@ -105,9 +105,11 @@ final class XLinkConnection: @unchecked Sendable {
             return running
         }
         guard wasRunning else { return }
-        pipe.abortRead()
-        readerDone.wait()
-        pipe.close()
+        // Abort again until the reader has gone: one abort is lost if the reader was between
+        // seeing `running` and starting its next read.
+        repeat { pipe.abortRead() } while readerDone.wait(timeout: .now() + .milliseconds(100)) == .timedOut
+        // Under the send lock, so the watchdog thread can't be mid-write on a released interface.
+        sendLock.withLock { pipe.close() }
     }
 
     /// Writes the 4-byte keepalive on `stream` every 500 ms on its own thread until the link
@@ -122,14 +124,6 @@ final class XLinkConnection: @unchecked Sendable {
         }
         thread.name = "XLink watchdog"
         thread.start()
-    }
-
-    /// Asks the device to reboot (it comes back running its standalone app).
-    func reset() {
-        var h = Header()
-        h.id = nextRequestId()
-        h.type = Event.resetReq.rawValue
-        _ = send(h)
     }
 
     /// Creates (or joins) a named stream; returns the id the device uses for it.
