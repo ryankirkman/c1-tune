@@ -91,16 +91,18 @@ struct CameraSettings: Codable, Equatable, Sendable {
         if let data = try? JSONEncoder().encode(self) { UserDefaults.standard.set(data, forKey: "settings") }
     }
 
-    /// True when going from `self` to `new` returns a value to the tuning's default, which
-    /// needs the camera's pipeline restarted (there's no command for "default").
+    /// True when going from `self` to `new` needs the camera's pipeline restarted: zoom, framing,
+    /// flip and the microphone are part of the pipeline, and returning sharpness or denoise to
+    /// the tuning's default has no command.
     func needsRestart(for new: CameraSettings) -> Bool {
         (sharpness != nil && new.sharpness == nil) || (noiseReduction != nil && new.noiseReduction == nil)
             || (colorNoiseReduction != nil && new.colorNoiseReduction == nil) || flipped != new.flipped || microphone != new.microphone
             || zoom != new.zoom || (new.zoom != 100 && (frameX != new.frameX || frameY != new.frameY))
     }
 
-    /// Applies `key=value` pairs (from `C1Tune --set`). Unknown keys and unparseable
-    /// values are ignored; "default" clears sharpness or a denoise value.
+    /// Applies `key=value` pairs (from `C1Tune --set`). Unknown keys and unparseable values
+    /// are ignored, numbers are held to the same ranges as the panel's sliders, and "default"
+    /// clears sharpness or a denoise value.
     func applying(_ pairs: [String: String]) -> CameraSettings {
         var s = self
         for (key, raw) in pairs {
@@ -109,27 +111,28 @@ struct CameraSettings: Codable, Equatable, Sendable {
                 : ["false", "off", "no", "0"].contains(value) ? false : nil
             let clear = ["default", "nil", ""].contains(value)
             let number = Int(raw)
+            func within(_ range: ClosedRange<Int>) -> Int? { number.map { min(max($0, range.lowerBound), range.upperBound) } }
             switch key {
             case "autoExposure": s.autoExposure = flag ?? s.autoExposure
             case "autoFocus": s.autoFocus = flag ?? s.autoFocus
             case "autoWhiteBalance": s.autoWhiteBalance = flag ?? s.autoWhiteBalance
             case "flipped": s.flipped = flag ?? s.flipped
             case "microphone": s.microphone = flag ?? s.microphone
-            case "exposureUs": s.exposureUs = number ?? s.exposureUs
-            case "iso": s.iso = number ?? s.iso
-            case "exposureCompensation": s.exposureCompensation = number ?? s.exposureCompensation
-            case "lensPosition": s.lensPosition = number ?? s.lensPosition
-            case "whiteBalanceK": s.whiteBalanceK = number ?? s.whiteBalanceK
-            case "brightness": s.brightness = number ?? s.brightness
-            case "contrast": s.contrast = number ?? s.contrast
-            case "saturation": s.saturation = number ?? s.saturation
-            case "antiFlicker": s.antiFlicker = number ?? s.antiFlicker
+            case "exposureUs": s.exposureUs = within(100...33_000) ?? s.exposureUs
+            case "iso": s.iso = within(100...1600) ?? s.iso
+            case "exposureCompensation": s.exposureCompensation = within(-9...9) ?? s.exposureCompensation
+            case "lensPosition": s.lensPosition = within(0...255) ?? s.lensPosition
+            case "whiteBalanceK": s.whiteBalanceK = within(1000...12_000) ?? s.whiteBalanceK
+            case "brightness": s.brightness = within(-10...10) ?? s.brightness
+            case "contrast": s.contrast = within(-10...10) ?? s.contrast
+            case "saturation": s.saturation = within(-10...10) ?? s.saturation
+            case "antiFlicker": s.antiFlicker = within(0...3) ?? s.antiFlicker
             case "zoom": s.zoom = number.map(Self.nearestZoom) ?? s.zoom
-            case "frameX": s.frameX = number.map { min(max($0, 0), 100) } ?? s.frameX
-            case "frameY": s.frameY = number.map { min(max($0, 0), 100) } ?? s.frameY
-            case "sharpness": s.sharpness = clear ? nil : number ?? s.sharpness
-            case "noiseReduction": s.noiseReduction = clear ? nil : number ?? s.noiseReduction
-            case "colorNoiseReduction": s.colorNoiseReduction = clear ? nil : number ?? s.colorNoiseReduction
+            case "frameX": s.frameX = within(0...100) ?? s.frameX
+            case "frameY": s.frameY = within(0...100) ?? s.frameY
+            case "sharpness": s.sharpness = clear ? nil : within(0...4) ?? s.sharpness
+            case "noiseReduction": s.noiseReduction = clear ? nil : within(0...4) ?? s.noiseReduction
+            case "colorNoiseReduction": s.colorNoiseReduction = clear ? nil : within(0...4) ?? s.colorNoiseReduction
             default: break
             }
         }

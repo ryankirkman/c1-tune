@@ -27,6 +27,13 @@ if let i = CommandLine.arguments.firstIndex(of: "--set") {
         let parts = arg.split(separator: "=", maxSplits: 1).map(String.init)
         if parts.count == 2 { pairs[parts[0]] = parts[1] }
     }
+    // Only the running app talks to the camera; without it the notification goes nowhere.
+    let me = ProcessInfo.processInfo.processIdentifier
+    guard NSRunningApplication.runningApplications(withBundleIdentifier: "com.ryankirkman.c1tune")
+        .contains(where: { $0.processIdentifier != me }) else {
+        FileHandle.standardError.write(Data("C1 Tune isn't running; open it first.\n".utf8))
+        exit(1)
+    }
     DistributedNotificationCenter.default().postNotificationName(
         .init("com.ryankirkman.c1tune.set"), object: nil, userInfo: pairs, deliverImmediately: true)
     exit(0)
